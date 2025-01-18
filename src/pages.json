@@ -1,20 +1,28 @@
 {
   "pages": [
-    //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
     {
       "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "租房计算器"
+        "navigationBarTitleText": "房租计算器"
       }
     },
     {
-      "path": "pages/calculator/calculator"
+      "path": "pages/calculator/calculator",
+      "style": {
+        "navigationBarTitleText": "计算账单"
+      }
+    },
+    {
+      "path": "pages/rent-records/rent-records",
+      "style": {
+        "navigationBarTitleText": "房租记录"
+      }
     }
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "租房计算器",
-    "navigationBarBackgroundColor": "#F8F8F8",
-    "backgroundColor": "#F8F8F8"
+    "navigationBarTitleText": "房租计算器",
+    "navigationBarBackgroundColor": "#F6F7FB",
+    "backgroundColor": "#F6F7FB"
   }
 }
