@@ -34,6 +34,14 @@ type RoomRecord = {
   electricityReading: number;
 };
 
+// 计算项类型
+type CalculateItem = {
+  type: string;
+  before: number;
+  now: number;
+  singlePrice: number;
+};
+
 // 房间类型
 type RoomType = {
   roomId: string;
@@ -44,6 +52,7 @@ type RoomType = {
   basicFees?: BasicFee[];
   rentRecords?: RentRecord[];
   record: RoomRecord[];
+  calculateItem?: CalculateItem[];
 };
 
 export const calculatorState = defineStore("calculator", {
@@ -51,6 +60,7 @@ export const calculatorState = defineStore("calculator", {
     return {
       roomArray: [] as RoomType[],
       roomInfo: {} as RoomType,
+      roomId: "",
       waterPrice: 0,
       electricityPrice: 0,
       currentWater: 0,
@@ -61,10 +71,11 @@ export const calculatorState = defineStore("calculator", {
   },
   getters: {
     roomItems: (state) => {
-      return state.roomInfo.calculateItem;
+      return state.roomInfo.calculateItem || [];
     },
     getResultByIndex() {
       return (index: number) => {
+        if (!this.roomItems[index]) return "0.00";
         return (
           (this.roomItems[index].now - this.roomItems[index].before) *
           this.roomItems[index].singlePrice
@@ -73,10 +84,12 @@ export const calculatorState = defineStore("calculator", {
     },
     getTotal(state) {
       let total = 0;
-      this.roomItems.forEach((item, index) => {
-        total += Number(this.getResultByIndex(index));
-      });
-      total += Number(state.roomInfo.rent);
+      if (this.roomItems) {
+        this.roomItems.forEach((item, index) => {
+          total += Number(this.getResultByIndex(index));
+        });
+      }
+      total += Number(state.roomInfo.rent || 0);
       return total.toFixed(2);
     },
   },
@@ -103,6 +116,7 @@ export const calculatorState = defineStore("calculator", {
     },
 
     selectRoom(roomId: string) {
+      this.roomId = roomId;
       const room = this.roomArray.find((room) => room.roomId === roomId);
       if (room) {
         this.roomInfo = room;
@@ -195,10 +209,10 @@ export const calculatorState = defineStore("calculator", {
         this.roomInfo.rentRecords = [];
       }
 
-      // 创建新的房租记录
+      // 创建新的房租记录，包含基础费用
       const newRentRecord: RentRecord = {
         date: currentTime,
-        amount: Number(this.roomInfo.rent || 0),
+        amount: Number(this.roomInfo.rent || 0) + basicFeesTotal,
         isPaid: false,
         waterUsage: waterUsage,
         waterPrice: Number(this.waterPrice),

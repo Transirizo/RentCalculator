@@ -195,19 +195,72 @@ const calculateTotal = () => {
 }
 
 const finishAndSave = () => {
+  // 检查水电用量是否已填写
+  if (!state.currentWater) {
+    uni.showToast({
+      title: '请输入本月水表读数',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+
+  if (!state.currentElectricity) {
+    uni.showToast({
+      title: '请输入本月电表读数',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+
+  // 检查水电用量是否小于上月读数
+  if (Number(state.currentWater) < Number(state.lastWater)) {
+    uni.showToast({
+      title: '本月水表读数不能小于上月读数',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+
+  if (Number(state.currentElectricity) < Number(state.lastElectricity)) {
+    uni.showToast({
+      title: '本月电表读数不能小于上月读数',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+
+  // 检查水电单价是否已设置
+  if (!state.waterPrice) {
+    uni.showToast({
+      title: '请设置水费单价',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+
+  if (!state.electricityPrice) {
+    uni.showToast({
+      title: '请设置电费单价',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+
+  // 如果所有检查都通过，显示确认对话框
   uni.showModal({
     title: '确认保存',
     content: '请确认所有数据输入正确',
     success: function (res) {
       if (res.confirm) {
         state.saveData()
-        uni.navigateBack({
-          delta: 1,
-          fail: () => {
-            uni.reLaunch({
-              url: '/pages/index/index'
-            })
-          }
+        uni.redirectTo({
+          url: '/pages/rent-records/rent-records'
         })
       }
     },

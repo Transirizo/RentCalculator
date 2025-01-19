@@ -1,5 +1,10 @@
 <template>
   <view class="container">
+    <!-- 添加自定义返回按钮 -->
+    <button class="back-btn" hover-class="btn-hover" @click="goBack">
+      <text class="back-icon">←</text>
+      <text class="back-text">返回首页</text>
+    </button>
     <view class="content">
       <!-- 房间标题 -->
       <view class="room-header">
@@ -18,20 +23,35 @@
             :key="index"
             class="rent-record-item"
           >
-            <view class="rent-record-left">
-              <text class="rent-record-date">{{ record.date }}</text>
-              <view class="rent-record-details">
-                <text class="detail-item">房租：¥{{ record.amount }}</text>
-                <text class="detail-item">水费：¥{{ record.waterFee?.toFixed(2) }} ({{ record.waterUsage }}吨)</text>
-                <text class="detail-item">电费：¥{{ record.electricityFee?.toFixed(2) }} ({{ record.electricityUsage }}度)</text>
-                <text class="detail-total">总计：¥{{ record.totalAmount }}</text>
+            <view class="rent-record-wrapper">
+              <view class="rent-record-content"
+                @touchstart="handleTouchStart($event, index)"
+                @touchmove="handleTouchMove($event, index)"
+                @touchend="handleTouchEnd(index)"
+                :style="{ transform: `translateX(${slideWidths[index] || 0}px)` }"
+              >
+                <view class="rent-record-left">
+                  <text class="rent-record-date">{{ record.date }}</text>
+                  <view class="rent-record-details">
+                    <text class="detail-item">房租：¥{{ record.amount - getBasicFeesTotal(record.basicFees) }}</text>
+                    <template v-if="record.basicFees?.length">
+                      <text class="detail-item" v-for="(fee, i) in record.basicFees" :key="i">
+                        {{ fee.name }}：¥{{ fee.amount }}
+                      </text>
+                    </template>
+                    <text class="detail-item">水费：¥{{ record.waterFee?.toFixed(2) }} ({{ record.waterUsage }}吨)</text>
+                    <text class="detail-item">电费：¥{{ record.electricityFee?.toFixed(2) }} ({{ record.electricityUsage }}度)</text>
+                    <text class="detail-total">总计：¥{{ record.totalAmount }}</text>
+                  </view>
+                </view>
+                <view 
+                  :class="['rent-record-status', record.isPaid ? 'paid' : 'unpaid']"
+                  @tap.stop="togglePayStatus(index)"
+                >
+                  {{ record.isPaid ? '已缴费' : '未缴费' }}
+                </view>
               </view>
-            </view>
-            <view 
-              :class="['rent-record-status', record.isPaid ? 'paid' : 'unpaid']"
-              @click="togglePayStatus(index)"
-            >
-              {{ record.isPaid ? '已缴费' : '未缴费' }}
+              <view class="delete-btn" @tap.stop="deleteRecord(index)">删除</view>
             </view>
           </view>
         </view>
@@ -47,9 +67,65 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import { calculatorState } from '@/store/store'
 
 const state = calculatorState()
+
+// 左滑删除相关
+const slideWidths = ref<{ [key: number]: number }>({})
+let startX = 0
+const deleteWidth = 80
+
+const handleTouchStart = (event: TouchEvent, index: number) => {
+  startX = event.touches[0].clientX
+  slideWidths.value[index] = slideWidths.value[index] || 0
+}
+
+const handleTouchMove = (event: TouchEvent, index: number) => {
+  const moveX = event.touches[0].clientX
+  const distance = moveX - startX
+  
+  if (distance < 0) {
+    slideWidths.value[index] = Math.max(distance, -deleteWidth)
+  } else if (distance > 0 && slideWidths.value[index] < 0) {
+    slideWidths.value[index] = Math.min(0, slideWidths.value[index] + distance)
+    startX = moveX
+  }
+}
+
+const handleTouchEnd = (index: number) => {
+  if (slideWidths.value[index] < -deleteWidth / 2) {
+    slideWidths.value[index] = -deleteWidth
+  } else {
+    slideWidths.value[index] = 0
+  }
+}
+
+// 删除记录
+const deleteRecord = (index: number) => {
+  uni.showModal({
+    title: '确认删除',
+    content: '删除后无法恢复，是否继续？',
+    success: function (res) {
+      if (res.confirm) {
+        if (!state.roomInfo.rentRecords) return
+        state.roomInfo.rentRecords.splice(index, 1)
+        state.saveRentRecords()
+        slideWidths.value[index] = 0
+        
+        uni.showToast({
+          title: '删除成功',
+          icon: 'success',
+          duration: 2000
+        })
+      } else {
+        slideWidths.value[index] = 0
+      }
+    }
+  })
+}
 
 // 只保留切换缴费状态的功能
 const togglePayStatus = (index: number) => {
@@ -63,6 +139,34 @@ const togglePayStatus = (index: number) => {
     duration: 2000
   })
 }
+
+// 计算基础费用总和
+const getBasicFeesTotal = (basicFees?: Array<{ name: string; amount: number }>) => {
+  return basicFees?.reduce((sum, fee) => sum + Number(fee.amount || 0), 0) || 0;
+};
+
+// 添加返回首页逻辑
+const goBack = () => {
+  uni.reLaunch({
+    url: '/pages/index/index'
+  })
+}
+
+// 监听返回按钮点击
+onLoad(() => {
+  uni.setNavigationBarColor({
+    frontColor: '#000000',
+    backgroundColor: '#F6F7FB'
+  })
+  
+  // 监听物理返回按钮
+  uni.addInterceptor('navigateBack', {
+    invoke() {
+      goBack()
+      return false // 阻止默认返回行为
+    }
+  })
+})
 </script>
 
 <style scoped>
@@ -114,15 +218,34 @@ const togglePayStatus = (index: number) => {
 }
 
 .rent-record-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 0;
-  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 12px;
 }
 
 .rent-record-item:last-child {
-  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.rent-record-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  pointer-events: auto;
+}
+
+.rent-record-content {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px;
+  background: #fff;
+  transform: translateX(0);
+  transition: transform 0.3s ease;
+  z-index: 2;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  pointer-events: auto;
 }
 
 .rent-record-left {
@@ -146,6 +269,9 @@ const togglePayStatus = (index: number) => {
   padding: 4px 12px;
   border-radius: 100px;
   font-size: 14px;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .rent-record-status.paid {
@@ -197,5 +323,47 @@ const togglePayStatus = (index: number) => {
   color: var(--text-color);
   font-weight: 500;
   margin-top: 4px;
+}
+
+.back-btn {
+  position: fixed;
+  left: 16px;
+  top: 16px;
+  height: 32px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 100;
+}
+
+.back-icon {
+  font-size: 20px;
+  color: var(--text-color);
+}
+
+.back-text {
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.delete-btn {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  width: 80px;
+  background: var(--danger-color);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  z-index: 1;
+  border-radius: 0 8px 8px 0;
+  pointer-events: auto;
 }
 </style> 
