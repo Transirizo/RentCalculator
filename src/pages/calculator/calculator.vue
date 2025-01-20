@@ -40,13 +40,7 @@
 
         <view class="input-group">
           <text class="label">房租</text>
-          <input
-            class="input"
-            type="digit"
-            :value="state.roomInfo.rent || ''"
-            @input="(e) => updateRent(e.detail.value)"
-            placeholder="输入房租金额"
-          />
+          <text class="price">¥{{ state.roomInfo.rent || 0 }}</text>
         </view>
 
         <!-- 动态费用项 -->
@@ -218,9 +212,7 @@ onMounted(() => {
   // 清空所有当月读数，等待用户输入
   state.currentWater = "";
   state.currentElectricity = "";
-  if (state.roomInfo.enableGas) {
-    state.currentGas = "";
-  }
+  state.currentGas = "";
 });
 
 const calculateWater = () => {
@@ -257,96 +249,6 @@ const calculateTotal = () => {
   return (rent + water + electricity + gas + basicFeesTotal).toFixed(2);
 };
 
-const finishAndSave = () => {
-  // 检查水电用量是否已填写
-  if (!state.currentWater) {
-    uni.showToast({
-      title: "请输入本月水表读数",
-      icon: "none",
-      duration: 2000,
-    });
-    return;
-  }
-
-  if (!state.currentElectricity) {
-    uni.showToast({
-      title: "请输入本月电表读数",
-      icon: "none",
-      duration: 2000,
-    });
-    return;
-  }
-
-  if (!state.currentGas && state.roomInfo.enableGas) {
-    uni.showToast({
-      title: "请输入本月燃气表读数",
-      icon: "none",
-      duration: 2000,
-    });
-    return;
-  }
-
-  // 检查水电用量是否小于上月读数
-  if (Number(state.currentWater) < Number(state.lastWater)) {
-    uni.showToast({
-      title: "本月水表读数不能小于上月读数",
-      icon: "none",
-      duration: 2000,
-    });
-    return;
-  }
-
-  if (Number(state.currentElectricity) < Number(state.lastElectricity)) {
-    uni.showToast({
-      title: "本月电表读数不能小于上月读数",
-      icon: "none",
-      duration: 2000,
-    });
-    return;
-  }
-
-  if (state.roomInfo.enableGas && Number(state.currentGas) < Number(state.lastGas)) {
-    uni.showToast({
-      title: "本月燃气表读数不能小于上月读数",
-      icon: "none",
-      duration: 2000,
-    });
-    return;
-  }
-
-  // 如果所有检查都通过，显示确认对话框
-  uni.showModal({
-    title: "确认保存",
-    content: "请确认所有数据输入正确",
-    success: function (res) {
-      if (res.confirm) {
-        saveData();
-        uni.redirectTo({
-          url: "/pages/rent-records/rent-records",
-        });
-      }
-    },
-  });
-};
-
-const getLastWaterPrice = () => {
-  return state.roomInfo.waterPrice
-    ? `上次单价: ${state.roomInfo.waterPrice}`
-    : "输入单价";
-};
-
-const getLastElectricityPrice = () => {
-  return state.roomInfo.electricityPrice
-    ? `上次单价: ${state.roomInfo.electricityPrice}`
-    : "输入单价";
-};
-
-const getLastGasPrice = () => {
-  return state.roomInfo.gasPrice
-    ? `上次单价: ${state.roomInfo.gasPrice}`
-    : "输入单价";
-};
-
 const getWaterUsage = () => {
   return (
     Number(state.currentWater || 0) - Number(state.lastWater || 0)
@@ -360,9 +262,7 @@ const getElectricityUsage = () => {
 };
 
 const getGasUsage = () => {
-  return (Number(state.currentGas || 0) - Number(state.lastGas || 0)).toFixed(
-    1
-  );
+  return (Number(state.currentGas || 0) - Number(state.lastGas || 0)).toFixed(1);
 };
 
 const updateWaterPrice = (value: string) => {
@@ -501,17 +401,6 @@ const updateFeeAmount = (index: number, value: string) => {
   state.roomInfo.basicFees[index].amount = Number(value);
 };
 
-const updateRent = (value: string) => {
-  if (value === "" || value === "0") {
-    state.roomInfo.rent = 0;
-    return;
-  }
-  if (value.length > 1 && value[0] === "0" && value[1] !== ".") {
-    value = value.replace(/^0+/, "");
-  }
-  state.roomInfo.rent = Number(value);
-};
-
 const goToRentRecords = () => {
   uni.navigateTo({
     url: "/pages/rent-records/rent-records",
@@ -532,6 +421,78 @@ const saveData = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const finishAndSave = () => {
+  // 检查水电用量是否已填写
+  if (!state.currentWater) {
+    uni.showToast({
+      title: "请输入本月水表读数",
+      icon: "none",
+      duration: 2000,
+    });
+    return;
+  }
+
+  if (!state.currentElectricity) {
+    uni.showToast({
+      title: "请输入本月电表读数",
+      icon: "none",
+      duration: 2000,
+    });
+    return;
+  }
+
+  if (!state.currentGas && state.roomInfo.enableGas) {
+    uni.showToast({
+      title: "请输入本月燃气表读数",
+      icon: "none",
+      duration: 2000,
+    });
+    return;
+  }
+
+  // 检查水电用量是否小于上月读数
+  if (Number(state.currentWater) < Number(state.lastWater)) {
+    uni.showToast({
+      title: "本月水表读数不能小于上月读数",
+      icon: "none",
+      duration: 2000,
+    });
+    return;
+  }
+
+  if (Number(state.currentElectricity) < Number(state.lastElectricity)) {
+    uni.showToast({
+      title: "本月电表读数不能小于上月读数",
+      icon: "none",
+      duration: 2000,
+    });
+    return;
+  }
+
+  if (state.roomInfo.enableGas && Number(state.currentGas) < Number(state.lastGas)) {
+    uni.showToast({
+      title: "本月燃气表读数不能小于上月读数",
+      icon: "none",
+      duration: 2000,
+    });
+    return;
+  }
+
+  // 如果所有检查都通过，显示确认对话框
+  uni.showModal({
+    title: "确认保存",
+    content: "请确认所有数据输入正确",
+    success: function (res) {
+      if (res.confirm) {
+        saveData();
+        uni.redirectTo({
+          url: "/pages/rent-records/rent-records",
+        });
+      }
+    },
+  });
 };
 </script>
 

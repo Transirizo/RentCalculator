@@ -152,7 +152,6 @@ export const calculatorState = defineStore("calculator", {
         // 设置单价
         this.waterPrice = room.waterPrice || 0;
         this.electricityPrice = room.electricityPrice || 0;
-        // 设置燃气费单价
         this.gasPrice = room.gasPrice || 0;
 
         // 设置上月读数（优先使用最近一次的记录，如果没有则使用初始读数）
@@ -160,35 +159,31 @@ export const calculatorState = defineStore("calculator", {
           // 使用最近一次记录的读数
           this.lastWater = room.record[0].waterReading;
           this.lastElectricity = room.record[0].electricityReading;
-          // 设置燃气表读数
-          this.lastGas = room.record[0].gasReading || 0;
-          // 同时设置当前燃气表读数
-          this.currentGas = String(this.lastGas);
+          this.lastGas =
+            room.record[0].gasReading || room.lastReadings.gas || 0;
         } else {
           // 使用初始设置的读数
-          this.lastWater = room.lastReadings.water;
-          this.lastElectricity = room.lastReadings.electricity;
-          // 设置初始燃气表读数
+          this.lastWater = room.lastReadings.water || 0;
+          this.lastElectricity = room.lastReadings.electricity || 0;
           this.lastGas = room.lastReadings.gas || 0;
-          // 同时设置当前燃气表读数
-          this.currentGas = String(this.lastGas);
         }
 
-        // 总是保存燃气表读数
-        if (this.lastGas !== undefined) {
-          this.roomInfo.lastReadings = {
-            ...this.roomInfo.lastReadings,
-            gas: this.lastGas,
-          };
-          // 更新数组中的房间信息
-          const index = this.roomArray.findIndex(
-            (room) => room.roomId === this.roomInfo.roomId
-          );
-          if (index !== -1) {
-            this.roomArray[index] = this.roomInfo;
+        // 获取当前页面路径
+        const pages = getCurrentPages();
+        const currentPage = pages[pages.length - 1];
+        const isCalculatorPage = currentPage.route?.includes("calculator");
+
+        // 只在计算页面时才设置 currentGas
+        if (isCalculatorPage) {
+          // 在计算页面时才根据启用状态设置 currentGas
+          if (room.enableGas) {
+            this.currentGas = String(this.lastGas);
+          } else {
+            this.currentGas = ""; // 只在计算页面清空当前输入
           }
-          // 保存到本地存储
-          uni.setStorageSync("rooms", JSON.stringify(this.roomArray));
+        } else {
+          // 在其他页面(如设置页面)保持 currentGas 为上次读数
+          this.currentGas = String(this.lastGas);
         }
       }
     },
@@ -333,28 +328,25 @@ export const calculatorState = defineStore("calculator", {
         electricityReading: Number(this.currentElectricity),
       };
 
-      // 只在启用燃气费时添加燃气相关数据
-      if (this.roomInfo.enableGas) {
-        Object.assign(record, {
-          gasPrice: Number(this.gasPrice),
-          gasReading: Number(this.currentGas),
-          gasUsage: gasUsage,
-          gasFee: gasFee,
-        });
-      }
+      // 总是添加燃气相关数据,但未启用时使用上次读数
+      Object.assign(record, {
+        gasPrice: Number(this.gasPrice),
+        gasReading: this.roomInfo.enableGas
+          ? Number(this.currentGas)
+          : this.lastGas,
+        gasUsage: this.roomInfo.enableGas ? gasUsage : 0,
+        gasFee: this.roomInfo.enableGas ? gasFee : 0,
+      });
 
       this.roomInfo.record.unshift(record);
 
-      // 更新 lastReadings 时也要区分
+      // 更新 lastReadings
       const lastReadings: { water: number; electricity: number; gas?: number } =
         {
           water: Number(this.currentWater),
           electricity: Number(this.currentElectricity),
+          gas: this.roomInfo.enableGas ? Number(this.currentGas) : this.lastGas, // 未启用时保持上次读数
         };
-
-      if (this.roomInfo.enableGas) {
-        lastReadings.gas = Number(this.currentGas);
-      }
 
       this.roomInfo.lastReadings = lastReadings;
 
@@ -389,10 +381,7 @@ export const calculatorState = defineStore("calculator", {
       // 更新房间信息
       this.roomInfo.waterPrice = Number(this.waterPrice);
       this.roomInfo.electricityPrice = Number(this.electricityPrice);
-      // 总是保存燃气费单价，即使未启用燃气费
-      if (this.gasPrice !== undefined) {
-        this.roomInfo.gasPrice = Number(this.gasPrice);
-      }
+      this.roomInfo.gasPrice = Number(this.gasPrice);
 
       // 更新数组中的房间信息
       const index = this.roomArray.findIndex(

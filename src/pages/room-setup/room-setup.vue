@@ -165,8 +165,6 @@ const updateLastGas = (value: string) => {
     value = value.replace(/^0+/, "");
   }
   state.lastGas = Number(value);
-  // 同时更新 lastReadings
-  state.roomInfo.lastReadings.gas = Number(value);
 };
 
 const updateWaterPrice = (value: string) => {
@@ -207,7 +205,6 @@ const toggleGas = (value: boolean) => {
 };
 
 const saveAndReturn = () => {
-  // 保存房间信息
   const index = state.roomArray.findIndex(
     (room) => room.roomId === state.roomInfo.roomId
   );
@@ -216,13 +213,13 @@ const saveAndReturn = () => {
     state.roomInfo.lastReadings = {
       water: state.lastWater,
       electricity: state.lastElectricity,
-      gas: state.lastGas,
+      gas: state.lastGas,  
     };
 
     // 更新房间信息中的单价
     state.roomInfo.waterPrice = state.waterPrice;
     state.roomInfo.electricityPrice = state.electricityPrice;
-    state.roomInfo.gasPrice = state.gasPrice;
+    state.roomInfo.gasPrice = state.gasPrice;  // 总是保存燃气费单价
 
     state.roomArray[index] = state.roomInfo;
   }
