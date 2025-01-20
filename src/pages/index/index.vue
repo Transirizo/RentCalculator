@@ -1,12 +1,26 @@
 <template>
   <view class="container" @click="handlePageClick">
+    <view class="search-wrapper">
+      <view class="search-bar">
+        <text class="search-icon">🔍</text>
+        <input
+          class="search-input"
+          type="text"
+          v-model="searchText"
+          placeholder="搜索房间"
+          @input="handleSearch"
+        />
+        <text v-if="searchText" class="clear-btn" @click.stop="clearSearch">×</text>
+      </view>
+    </view>
+
     <view class="room-list">
-      <view class="hint-text" v-if="state.roomArray.length">
+      <view class="hint-text" v-if="filteredRooms.length">
         · 长按房间可删除
       </view>
       <view
         class="room-item"
-        v-for="(room, index) in state.roomArray"
+        v-for="(room, index) in filteredRooms"
         :key="room.roomId"
         @longpress="() => handleLongPress(index)"
       >
@@ -49,7 +63,20 @@
       </view>
     </view>
 
-    <view class="empty" v-if="!state.roomArray.length">
+    <view class="empty search-empty" v-if="state.roomArray.length && !filteredRooms.length">
+      <view class="empty-icon">
+        <view class="no-result-icon"></view>
+      </view>
+      <view class="empty-content">
+        <text class="empty-title">未找到相关房间</text>
+        <text class="empty-text">试试其他搜索词</text>
+      </view>
+    </view>
+
+    <view class="empty add-empty" v-if="!state.roomArray.length">
+      <view class="empty-icon">
+        <text class="add-hint-icon">+</text>
+      </view>
       <text class="empty-title">添加房间</text>
       <text class="empty-text">点击右下角添加按钮创建新房间</text>
     </view>
@@ -61,10 +88,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { calculatorState } from "@/store/store";
 
 const state = calculatorState();
+const searchText = ref("");
 
 const editingIndex = ref<number | null>(null);
 
@@ -124,6 +152,22 @@ const goToRoomSettings = (roomId: string) => {
     url: "/pages/room-setup/room-setup",
   });
 };
+
+const filteredRooms = computed(() => {
+  if (!searchText.value) return state.roomArray;
+  const keyword = searchText.value.toLowerCase();
+  return state.roomArray.filter(room => 
+    room.roomName.toLowerCase().includes(keyword)
+  );
+});
+
+const handleSearch = () => {
+  // 搜索逻辑已通过 computed 属性实现
+};
+
+const clearSearch = () => {
+  searchText.value = "";
+};
 </script>
 
 <style scoped>
@@ -131,10 +175,11 @@ const goToRoomSettings = (roomId: string) => {
   min-height: 100vh;
   background: #f6f7fb;
   padding: 20px 16px;
+  box-sizing: border-box;
 }
 
 .room-list {
-  padding-bottom: 20px;
+  padding: 4px 0 20px;
 }
 
 .room-item {
@@ -234,21 +279,76 @@ const goToRoomSettings = (roomId: string) => {
 }
 
 .empty {
-  padding-top: 25vh;
+  padding-top: 20vh;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.empty-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.no-result-icon {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--secondary-text);
+  border-radius: 8px;
+  position: relative;
+  opacity: 0.3;
+}
+
+.no-result-icon::before,
+.no-result-icon::after {
+  content: '';
+  position: absolute;
+  background: var(--secondary-text);
+  left: 50%;
+  top: 50%;
+}
+
+.no-result-icon::before {
+  width: 24px;
+  height: 2px;
+  transform: translate(-50%, -50%);
+}
+
+.no-result-icon::after {
+  width: 2px;
+  height: 24px;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 .empty-title {
-  display: block;
-  font-size: 32px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 500;
   color: var(--text-color);
-  margin-bottom: 8px;
 }
 
 .empty-text {
-  font-size: 17px;
+  font-size: 15px;
   color: var(--secondary-text);
+  line-height: 1.4;
+}
+
+.add-hint-icon {
+  font-size: 32px;
+  color: var(--secondary-text);
+  opacity: 0.3;
+  font-weight: 300;
 }
 
 .delete-icon {
@@ -303,9 +403,62 @@ const goToRoomSettings = (roomId: string) => {
 }
 
 .hint-text {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--secondary-text);
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   padding: 0 4px;
+}
+
+.search-wrapper {
+  margin-bottom: 16px;
+  padding: 0;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.search-bar {
+  position: relative;
+  margin: 0;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  color: var(--secondary-text);
+  z-index: 1;
+}
+
+.search-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 36px 0 40px;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  font-size: 15px;
+  color: var(--text-color);
+  box-sizing: border-box;
+}
+
+.clear-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  color: var(--secondary-text);
+  font-size: 18px;
+  font-weight: 300;
+  background: #f0f0f0;
+  border-radius: 50%;
 }
 </style>
