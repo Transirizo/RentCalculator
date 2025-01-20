@@ -17,6 +17,12 @@
       "style": {
         "navigationBarTitleText": "房租记录"
       }
+    },
+    {
+      "path": "pages/room-setup/room-setup",
+      "style": {
+        "navigationBarTitleText": "房间设置"
+      }
     }
   ],
   "globalStyle": {

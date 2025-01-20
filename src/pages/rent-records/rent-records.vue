@@ -8,7 +8,9 @@
     <view class="content">
       <!-- 房间标题 -->
       <view class="room-header">
-        <text class="room-title">{{ state.roomInfo?.roomName || '未命名房间' }}</text>
+        <text class="room-title">{{
+          state.roomInfo?.roomName || "未命名房间"
+        }}</text>
       </view>
 
       <!-- 房租记录列表 -->
@@ -16,46 +18,77 @@
         <view class="card-header">
           <text class="card-title">房租记录</text>
         </view>
-        
+
         <view class="rent-records" v-if="state.roomInfo.rentRecords?.length">
-          <view 
-            v-for="(record, index) in state.roomInfo.rentRecords" 
+          <view
+            v-for="(record, index) in state.roomInfo.rentRecords"
             :key="index"
             class="rent-record-item"
           >
             <view class="rent-record-wrapper">
-              <view class="rent-record-content"
+              <view
+                class="rent-record-content"
                 @touchstart="handleTouchStart($event, index)"
                 @touchmove="handleTouchMove($event, index)"
                 @touchend="handleTouchEnd(index)"
-                :style="{ transform: `translateX(${slideWidths[index] || 0}px)` }"
+                :style="{
+                  transform: `translateX(${slideWidths[index] || 0}px)`,
+                }"
               >
                 <view class="rent-record-left">
                   <text class="rent-record-date">{{ record.date }}</text>
                   <view class="rent-record-details">
-                    <text class="detail-item">房租：¥{{ record.amount - getBasicFeesTotal(record.basicFees) }}</text>
+                    <text class="detail-item"
+                      >房租：¥{{
+                        record.amount - getBasicFeesTotal(record.basicFees)
+                      }}</text
+                    >
                     <template v-if="record.basicFees?.length">
-                      <text class="detail-item" v-for="(fee, i) in record.basicFees" :key="i">
+                      <text
+                        class="detail-item"
+                        v-for="(fee, i) in record.basicFees"
+                        :key="i"
+                      >
                         {{ fee.name }}：¥{{ fee.amount }}
                       </text>
                     </template>
-                    <text class="detail-item">水费：¥{{ record.waterFee?.toFixed(2) }} ({{ record.waterUsage }}吨)</text>
-                    <text class="detail-item">电费：¥{{ record.electricityFee?.toFixed(2) }} ({{ record.electricityUsage }}度)</text>
-                    <text class="detail-total">总计：¥{{ record.totalAmount }}</text>
+                    <text class="detail-item"
+                      >水费：¥{{ record.waterFee?.toFixed(2) }} ({{
+                        record.waterUsage
+                      }}吨)</text
+                    >
+                    <text class="detail-item"
+                      >电费：¥{{ record.electricityFee?.toFixed(2) }} ({{
+                        record.electricityUsage
+                      }}度)</text
+                    >
+                    <text class="detail-item" v-if="record.gasFee && record.gasFee > 0"
+                      >燃气费：¥{{ record.gasFee?.toFixed(2) }} ({{
+                        record.gasUsage
+                      }}立方)</text
+                    >
+                    <text class="detail-total"
+                      >总计：¥{{ record.totalAmount }}</text
+                    >
                   </view>
                 </view>
-                <view 
-                  :class="['rent-record-status', record.isPaid ? 'paid' : 'unpaid']"
+                <view
+                  :class="[
+                    'rent-record-status',
+                    record.isPaid ? 'paid' : 'unpaid',
+                  ]"
                   @tap.stop="togglePayStatus(index)"
                 >
-                  {{ record.isPaid ? '已缴费' : '未缴费' }}
+                  {{ record.isPaid ? "已缴费" : "未缴费" }}
                 </view>
               </view>
-              <view class="delete-btn" @tap.stop="deleteRecord(index)">删除</view>
+              <view class="delete-btn" @tap.stop="deleteRecord(index)"
+                >删除</view
+              >
             </view>
           </view>
         </view>
-        
+
         <!-- 无记录提示 -->
         <view v-else class="no-records">
           <text class="no-records-text">暂无房租记录</text>
@@ -67,106 +100,111 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
-import { calculatorState } from '@/store/store'
+import { ref } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
+import { calculatorState } from "@/store/store";
 
-const state = calculatorState()
+const state = calculatorState();
 
 // 左滑删除相关
-const slideWidths = ref<{ [key: number]: number }>({})
-let startX = 0
-const deleteWidth = 80
+const slideWidths = ref<{ [key: number]: number }>({});
+let startX = 0;
+const deleteWidth = 80;
 
 const handleTouchStart = (event: TouchEvent, index: number) => {
-  startX = event.touches[0].clientX
-  slideWidths.value[index] = slideWidths.value[index] || 0
-}
+  startX = event.touches[0].clientX;
+  slideWidths.value[index] = slideWidths.value[index] || 0;
+};
 
 const handleTouchMove = (event: TouchEvent, index: number) => {
-  const moveX = event.touches[0].clientX
-  const distance = moveX - startX
-  
+  const moveX = event.touches[0].clientX;
+  const distance = moveX - startX;
+
   if (distance < 0) {
-    slideWidths.value[index] = Math.max(distance, -deleteWidth)
+    slideWidths.value[index] = Math.max(distance, -deleteWidth);
   } else if (distance > 0 && slideWidths.value[index] < 0) {
-    slideWidths.value[index] = Math.min(0, slideWidths.value[index] + distance)
-    startX = moveX
+    slideWidths.value[index] = Math.min(0, slideWidths.value[index] + distance);
+    startX = moveX;
   }
-}
+};
 
 const handleTouchEnd = (index: number) => {
   if (slideWidths.value[index] < -deleteWidth / 2) {
-    slideWidths.value[index] = -deleteWidth
+    slideWidths.value[index] = -deleteWidth;
   } else {
-    slideWidths.value[index] = 0
+    slideWidths.value[index] = 0;
   }
-}
+};
 
 // 删除记录
 const deleteRecord = (index: number) => {
   uni.showModal({
-    title: '确认删除',
-    content: '删除后无法恢复，是否继续？',
+    title: "确认删除",
+    content: "删除后无法恢复，是否继续？",
     success: function (res) {
       if (res.confirm) {
-        if (!state.roomInfo.rentRecords) return
-        state.roomInfo.rentRecords.splice(index, 1)
-        state.saveRentRecords()
-        slideWidths.value[index] = 0
-        
+        if (!state.roomInfo.rentRecords) return;
+        state.roomInfo.rentRecords.splice(index, 1);
+        state.saveRentRecords();
+        slideWidths.value[index] = 0;
+
         uni.showToast({
-          title: '删除成功',
-          icon: 'success',
-          duration: 2000
-        })
+          title: "删除成功",
+          icon: "success",
+          duration: 2000,
+        });
       } else {
-        slideWidths.value[index] = 0
+        slideWidths.value[index] = 0;
       }
-    }
-  })
-}
+    },
+  });
+};
 
 // 只保留切换缴费状态的功能
 const togglePayStatus = (index: number) => {
-  if (!state.roomInfo.rentRecords) return
-  state.roomInfo.rentRecords[index].isPaid = !state.roomInfo.rentRecords[index].isPaid
-  state.saveRentRecords()
+  if (!state.roomInfo.rentRecords) return;
+  state.roomInfo.rentRecords[index].isPaid =
+    !state.roomInfo.rentRecords[index].isPaid;
+  state.saveRentRecords();
 
   uni.showToast({
-    title: state.roomInfo.rentRecords[index].isPaid ? '已标记为已缴费' : '已标记为未缴费',
-    icon: 'none',
-    duration: 2000
-  })
-}
+    title: state.roomInfo.rentRecords[index].isPaid
+      ? "已标记为已缴费"
+      : "已标记为未缴费",
+    icon: "none",
+    duration: 2000,
+  });
+};
 
 // 计算基础费用总和
-const getBasicFeesTotal = (basicFees?: Array<{ name: string; amount: number }>) => {
+const getBasicFeesTotal = (
+  basicFees?: Array<{ name: string; amount: number }>
+) => {
   return basicFees?.reduce((sum, fee) => sum + Number(fee.amount || 0), 0) || 0;
 };
 
 // 添加返回首页逻辑
 const goBack = () => {
   uni.reLaunch({
-    url: '/pages/index/index'
-  })
-}
+    url: "/pages/index/index",
+  });
+};
 
 // 监听返回按钮点击
 onLoad(() => {
   uni.setNavigationBarColor({
-    frontColor: '#000000',
-    backgroundColor: '#F6F7FB'
-  })
-  
+    frontColor: "#000000",
+    backgroundColor: "#F6F7FB",
+  });
+
   // 监听物理返回按钮
-  uni.addInterceptor('navigateBack', {
+  uni.addInterceptor("navigateBack", {
     invoke() {
-      goBack()
-      return false // 阻止默认返回行为
-    }
-  })
-})
+      goBack();
+      return false; // 阻止默认返回行为
+    },
+  });
+});
 </script>
 
 <style scoped>
@@ -366,4 +404,4 @@ onLoad(() => {
   border-radius: 0 8px 8px 0;
   pointer-events: auto;
 }
-</style> 
+</style>

@@ -1,9 +1,14 @@
 <template>
   <view class="container">
-    <view class="content">
+    <view v-if="loading" class="loading">
+      <text>加载中...</text>
+    </view>
+    <view v-else class="content">
       <!-- 添加房间号显示 -->
       <view class="room-header">
-        <text class="room-title">{{ state.roomInfo?.roomName || '未命名房间' }}</text>
+        <text class="room-title">{{
+          state.roomInfo?.roomName || "未命名房间"
+        }}</text>
       </view>
 
       <!-- 基础费用卡片 -->
@@ -11,57 +16,72 @@
         <view class="card-header">
           <view class="title-group">
             <text class="card-title">基础费用</text>
-            <text class="hint-text" v-if="state.roomInfo.basicFees?.length">· 左滑删除</text>
+            <text class="hint-text" v-if="state.roomInfo.basicFees?.length"
+              >· 左滑删除</text
+            >
           </view>
           <view class="header-right">
-            <button class="record-btn" hover-class="btn-hover" @click="goToRentRecords">
+            <button
+              class="record-btn"
+              hover-class="btn-hover"
+              @click="goToRentRecords"
+            >
               房租记录
             </button>
-            <button class="add-fee-btn" hover-class="btn-hover" @click="addBasicFee">
+            <button
+              class="add-fee-btn"
+              hover-class="btn-hover"
+              @click="addBasicFee"
+            >
               <text class="add-fee-icon">+</text>
             </button>
           </view>
         </view>
-        
+
         <view class="input-group">
           <text class="label">房租</text>
-          <input 
-            class="input" 
-            type="digit" 
+          <input
+            class="input"
+            type="digit"
             :value="state.roomInfo.rent || ''"
-            @input="e => updateRent(e.detail.value)"
+            @input="(e) => updateRent(e.detail.value)"
             placeholder="输入房租金额"
           />
         </view>
 
         <!-- 动态费用项 -->
         <block v-if="state.roomInfo.basicFees?.length">
-          <view 
-            v-for="(fee, index) in state.roomInfo.basicFees" 
+          <view
+            v-for="(fee, index) in state.roomInfo.basicFees"
             :key="index"
             class="fee-group"
           >
             <view class="fee-wrapper">
-              <view class="fee-content" 
+              <view
+                class="fee-content"
                 @touchstart="(e) => touchStart(e, index)"
                 @touchmove="(e) => touchMove(e, index)"
                 @touchend="() => touchEnd(index)"
-                :style="{ transform: `translateX(${slideWidths[index] || 0}px)` }"
+                :style="{
+                  transform: `translateX(${slideWidths[index] || 0}px)`,
+                }"
               >
-                <input 
+                <input
                   class="fee-name-input"
                   v-model="fee.name"
                   placeholder="费用名称"
                 />
-                <input 
+                <input
                   class="fee-amount-input"
                   type="digit"
                   :value="fee.amount || ''"
-                  @input="e => updateFeeAmount(index, e.detail.value)"
+                  @input="(e) => updateFeeAmount(index, e.detail.value)"
                   placeholder="0"
                 />
               </view>
-              <view class="delete-btn" @click="deleteBasicFee(index)">删除</view>
+              <view class="delete-btn" @click="deleteBasicFee(index)"
+                >删除</view
+              >
             </view>
           </view>
         </block>
@@ -78,21 +98,21 @@
         <text class="card-title">水费计算</text>
         <view class="input-group">
           <text class="label">水费单价</text>
-          <input 
-            class="input" 
-            type="digit" 
+          <input
+            class="input"
+            type="digit"
             :value="state.waterPrice || ''"
-            @input="e => updateWaterPrice(e.detail.value)"
+            @input="(e) => updateWaterPrice(e.detail.value)"
             :placeholder="getLastWaterPrice()"
           />
         </view>
         <view class="input-group">
           <text class="label">本月读数</text>
-          <input 
-            class="input" 
-            type="digit" 
+          <input
+            class="input"
+            type="digit"
             :value="state.currentWater || ''"
-            @input="e => updateCurrentWater(e.detail.value)"
+            @input="(e) => updateCurrentWater(e.detail.value)"
             placeholder="输入本月读数"
           />
         </view>
@@ -115,21 +135,21 @@
         <text class="card-title">电费计算</text>
         <view class="input-group">
           <text class="label">电费单价</text>
-          <input 
-            class="input" 
-            type="digit" 
+          <input
+            class="input"
+            type="digit"
             :value="state.electricityPrice || ''"
-            @input="e => updateElectricityPrice(e.detail.value)"
+            @input="(e) => updateElectricityPrice(e.detail.value)"
             :placeholder="getLastElectricityPrice()"
           />
         </view>
         <view class="input-group">
           <text class="label">本月读数</text>
-          <input 
-            class="input" 
-            type="digit" 
+          <input
+            class="input"
+            type="digit"
             :value="state.currentElectricity || ''"
-            @input="e => updateCurrentElectricity(e.detail.value)"
+            @input="(e) => updateCurrentElectricity(e.detail.value)"
             placeholder="输入本月读数"
           />
         </view>
@@ -147,13 +167,54 @@
         </view>
       </view>
 
+      <!-- 燃气费计算卡片 -->
+      <view class="card" v-if="state.roomInfo.enableGas">
+        <text class="card-title">燃气费计算</text>
+        <view class="input-group">
+          <text class="label">燃气费单价</text>
+          <input
+            class="input"
+            type="digit"
+            :value="state.gasPrice || ''"
+            @input="(e) => updateGasPrice(e.detail.value)"
+            :placeholder="getLastGasPrice()"
+          />
+        </view>
+        <view class="input-group">
+          <text class="label">本月读数</text>
+          <input
+            class="input"
+            type="digit"
+            :value="state.currentGas || ''"
+            @input="(e) => updateCurrentGas(e.detail.value)"
+            placeholder="输入本月读数"
+          />
+        </view>
+        <view class="input-group">
+          <text class="label">上月读数</text>
+          <text class="last-reading">{{ state.lastGas }}</text>
+        </view>
+        <view class="result-row">
+          <text class="label">用气量</text>
+          <text class="sub-amount">{{ getGasUsage() }} 立方</text>
+        </view>
+        <view class="result-row">
+          <text class="label">燃气费</text>
+          <text class="amount">¥{{ calculateGas() }}</text>
+        </view>
+      </view>
+
       <!-- 总计卡片 -->
       <view class="total-card">
         <view class="total-content">
           <text class="total-label">本月总计</text>
           <text class="total-amount">¥{{ calculateTotal() }}</text>
         </view>
-        <text class="total-hint">包含房租、水费和电费</text>
+        <text class="total-hint"
+          >包含房租、水费、电费{{
+            state.roomInfo.enableGas ? "和燃气费" : ""
+          }}</text
+        >
       </view>
 
       <button class="save-btn" hover-class="btn-hover" @click="finishAndSave">
@@ -164,254 +225,332 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { calculatorState } from '@/store/store'
+import { ref, onMounted } from "vue";
+import { calculatorState } from "@/store/store";
 
-const state = calculatorState()
+const state = calculatorState();
+const loading = ref(false);
+
+// 在页面加载时清空所有当月读数输入框
+onMounted(() => {
+  // 清空所有当月读数，等待用户输入
+  state.currentWater = "";
+  state.currentElectricity = "";
+  if (state.roomInfo.enableGas) {
+    state.currentGas = "";
+  }
+});
 
 const calculateWater = () => {
-  const usage = Number(state.currentWater || 0) - Number(state.lastWater || 0)
-  const price = Number(state.waterPrice || 0)
-  return (usage * price).toFixed(2)
-}
+  const usage = Number(state.currentWater || 0) - Number(state.lastWater || 0);
+  const price = Number(state.waterPrice || 0);
+  return (usage * price).toFixed(2);
+};
 
 const calculateElectricity = () => {
-  const usage = Number(state.currentElectricity || 0) - Number(state.lastElectricity || 0)
-  const price = Number(state.electricityPrice || 0)
-  return (usage * price).toFixed(2)
-}
+  const usage =
+    Number(state.currentElectricity || 0) - Number(state.lastElectricity || 0);
+  const price = Number(state.electricityPrice || 0);
+  return (usage * price).toFixed(2);
+};
+
+const calculateGas = () => {
+  const usage = Number(state.currentGas || 0) - Number(state.lastGas || 0);
+  const price = Number(state.gasPrice || 0);
+  return (usage * price).toFixed(2);
+};
 
 const calculateTotal = () => {
-  const rent = Number(state.roomInfo.rent || 0)
-  const water = Number(calculateWater())
-  const electricity = Number(calculateElectricity())
-  
-  // 计算基础费用总和
-  const basicFeesTotal = state.roomInfo.basicFees?.reduce((sum, fee) => {
-    return sum + Number(fee.amount || 0)
-  }, 0) || 0
+  const rent = Number(state.roomInfo.rent || 0);
+  const water = Number(calculateWater());
+  const electricity = Number(calculateElectricity());
+  const gas = Number(calculateGas());
 
-  return (rent + water + electricity + basicFeesTotal).toFixed(2)
-}
+  // 计算基础费用总和
+  const basicFeesTotal =
+    state.roomInfo.basicFees?.reduce((sum, fee) => {
+      return sum + Number(fee.amount || 0);
+    }, 0) || 0;
+
+  return (rent + water + electricity + gas + basicFeesTotal).toFixed(2);
+};
 
 const finishAndSave = () => {
   // 检查水电用量是否已填写
   if (!state.currentWater) {
     uni.showToast({
-      title: '请输入本月水表读数',
-      icon: 'none',
-      duration: 2000
-    })
-    return
+      title: "请输入本月水表读数",
+      icon: "none",
+      duration: 2000,
+    });
+    return;
   }
 
   if (!state.currentElectricity) {
     uni.showToast({
-      title: '请输入本月电表读数',
-      icon: 'none',
-      duration: 2000
-    })
-    return
+      title: "请输入本月电表读数",
+      icon: "none",
+      duration: 2000,
+    });
+    return;
+  }
+
+  if (!state.currentGas && state.roomInfo.enableGas) {
+    uni.showToast({
+      title: "请输入本月燃气表读数",
+      icon: "none",
+      duration: 2000,
+    });
+    return;
   }
 
   // 检查水电用量是否小于上月读数
   if (Number(state.currentWater) < Number(state.lastWater)) {
     uni.showToast({
-      title: '本月水表读数不能小于上月读数',
-      icon: 'none',
-      duration: 2000
-    })
-    return
+      title: "本月水表读数不能小于上月读数",
+      icon: "none",
+      duration: 2000,
+    });
+    return;
   }
 
   if (Number(state.currentElectricity) < Number(state.lastElectricity)) {
     uni.showToast({
-      title: '本月电表读数不能小于上月读数',
-      icon: 'none',
-      duration: 2000
-    })
-    return
+      title: "本月电表读数不能小于上月读数",
+      icon: "none",
+      duration: 2000,
+    });
+    return;
   }
 
-  // 检查水电单价是否已设置
-  if (!state.waterPrice) {
+  if (state.roomInfo.enableGas && Number(state.currentGas) < Number(state.lastGas)) {
     uni.showToast({
-      title: '请设置水费单价',
-      icon: 'none',
-      duration: 2000
-    })
-    return
-  }
-
-  if (!state.electricityPrice) {
-    uni.showToast({
-      title: '请设置电费单价',
-      icon: 'none',
-      duration: 2000
-    })
-    return
+      title: "本月燃气表读数不能小于上月读数",
+      icon: "none",
+      duration: 2000,
+    });
+    return;
   }
 
   // 如果所有检查都通过，显示确认对话框
   uni.showModal({
-    title: '确认保存',
-    content: '请确认所有数据输入正确',
+    title: "确认保存",
+    content: "请确认所有数据输入正确",
     success: function (res) {
       if (res.confirm) {
-        state.saveData()
+        saveData();
         uni.redirectTo({
-          url: '/pages/rent-records/rent-records'
-        })
+          url: "/pages/rent-records/rent-records",
+        });
       }
     },
-  })
-}
+  });
+};
 
 const getLastWaterPrice = () => {
-  return state.roomInfo.waterPrice ? `上次单价: ${state.roomInfo.waterPrice}` : '输入单价'
-}
+  return state.roomInfo.waterPrice
+    ? `上次单价: ${state.roomInfo.waterPrice}`
+    : "输入单价";
+};
 
 const getLastElectricityPrice = () => {
-  return state.roomInfo.electricityPrice ? `上次单价: ${state.roomInfo.electricityPrice}` : '输入单价'
-}
+  return state.roomInfo.electricityPrice
+    ? `上次单价: ${state.roomInfo.electricityPrice}`
+    : "输入单价";
+};
+
+const getLastGasPrice = () => {
+  return state.roomInfo.gasPrice
+    ? `上次单价: ${state.roomInfo.gasPrice}`
+    : "输入单价";
+};
 
 const getWaterUsage = () => {
-  return (Number(state.currentWater || 0) - Number(state.lastWater || 0)).toFixed(1)
-}
+  return (
+    Number(state.currentWater || 0) - Number(state.lastWater || 0)
+  ).toFixed(1);
+};
 
 const getElectricityUsage = () => {
-  return (Number(state.currentElectricity || 0) - Number(state.lastElectricity || 0)).toFixed(1)
-}
+  return (
+    Number(state.currentElectricity || 0) - Number(state.lastElectricity || 0)
+  ).toFixed(1);
+};
+
+const getGasUsage = () => {
+  return (Number(state.currentGas || 0) - Number(state.lastGas || 0)).toFixed(
+    1
+  );
+};
 
 const updateWaterPrice = (value: string) => {
-  if (value === '' || value === '0') {
-    state.waterPrice = 0
-    return
+  if (value === "" || value === "0") {
+    state.waterPrice = 0;
+    return;
   }
-  if (value.length > 1 && value[0] === '0' && value[1] !== '.') {
-    value = value.replace(/^0+/, '')
+  if (value.length > 1 && value[0] === "0" && value[1] !== ".") {
+    value = value.replace(/^0+/, "");
   }
-  state.waterPrice = Number(value)
-}
+  state.waterPrice = Number(value);
+};
 
 const updateCurrentWater = (value: string) => {
-  if (value === '' || value === '0') {
-    state.currentWater = 0
-    return
+  if (value === "" || value === "0") {
+    state.currentWater = 0;
+    return;
   }
-  if (value.length > 1 && value[0] === '0' && value[1] !== '.') {
-    value = value.replace(/^0+/, '')
+  if (value.length > 1 && value[0] === "0" && value[1] !== ".") {
+    value = value.replace(/^0+/, "");
   }
-  state.currentWater = Number(value)
-}
+  state.currentWater = Number(value);
+};
 
 const updateElectricityPrice = (value: string) => {
-  if (value === '' || value === '0') {
-    state.electricityPrice = 0
-    return
+  if (value === "" || value === "0") {
+    state.electricityPrice = 0;
+    return;
   }
-  if (value.length > 1 && value[0] === '0' && value[1] !== '.') {
-    value = value.replace(/^0+/, '')
+  if (value.length > 1 && value[0] === "0" && value[1] !== ".") {
+    value = value.replace(/^0+/, "");
   }
-  state.electricityPrice = Number(value)
-}
+  state.electricityPrice = Number(value);
+};
 
 const updateCurrentElectricity = (value: string) => {
-  if (value === '' || value === '0') {
-    state.currentElectricity = 0
-    return
+  if (value === "" || value === "0") {
+    state.currentElectricity = 0;
+    return;
   }
-  if (value.length > 1 && value[0] === '0' && value[1] !== '.') {
-    value = value.replace(/^0+/, '')
+  if (value.length > 1 && value[0] === "0" && value[1] !== ".") {
+    value = value.replace(/^0+/, "");
   }
-  state.currentElectricity = Number(value)
-}
+  state.currentElectricity = Number(value);
+};
+
+const updateGasPrice = (value: string) => {
+  if (value === "" || value === "0") {
+    state.gasPrice = 0;
+    return;
+  }
+  if (value.length > 1 && value[0] === "0" && value[1] !== ".") {
+    value = value.replace(/^0+/, "");
+  }
+  state.gasPrice = Number(value);
+};
+
+const updateCurrentGas = (value: string) => {
+  if (value === "" || value === "0") {
+    state.currentGas = 0;
+    return;
+  }
+  if (value.length > 1 && value[0] === "0" && value[1] !== ".") {
+    value = value.replace(/^0+/, "");
+  }
+  state.currentGas = Number(value);
+};
 
 // 添加基础费用项
 const addBasicFee = () => {
   if (!state.roomInfo.basicFees) {
-    state.roomInfo.basicFees = []
+    state.roomInfo.basicFees = [];
   }
   state.roomInfo.basicFees.push({
-    name: '',
-    amount: undefined
-  })
-}
+    name: "",
+    amount: undefined,
+  });
+};
 
 // 删除基础费用项
 const deleteBasicFee = (index: number) => {
-  state.roomInfo.basicFees.splice(index, 1)
-  delete slideWidths.value[index]
-}
+  state.roomInfo.basicFees.splice(index, 1);
+  delete slideWidths.value[index];
+};
 
 // 计算基础费用总计
 const calculateBasicTotal = () => {
-  const rent = Number(state.roomInfo.rent || 0)
-  const basicFeesTotal = state.roomInfo.basicFees?.reduce((sum, fee) => {
-    return sum + Number(fee.amount || 0)
-  }, 0) || 0
-  return (rent + basicFeesTotal).toFixed(2)
-}
+  const rent = Number(state.roomInfo.rent || 0);
+  const basicFeesTotal =
+    state.roomInfo.basicFees?.reduce((sum, fee) => {
+      return sum + Number(fee.amount || 0);
+    }, 0) || 0;
+  return (rent + basicFeesTotal).toFixed(2);
+};
 
 // 左滑删除相关
-const slideWidths = ref<{ [key: number]: number }>({})
-let startX = 0
-const deleteWidth = 80
+const slideWidths = ref<{ [key: number]: number }>({});
+let startX = 0;
+const deleteWidth = 80;
 
 const touchStart = (event: TouchEvent, index: number) => {
-  startX = event.touches[0].clientX
-  slideWidths.value[index] = slideWidths.value[index] || 0
-}
+  startX = event.touches[0].clientX;
+  slideWidths.value[index] = slideWidths.value[index] || 0;
+};
 
 const touchMove = (event: TouchEvent, index: number) => {
-  const moveX = event.touches[0].clientX
-  const distance = moveX - startX
-  
+  const moveX = event.touches[0].clientX;
+  const distance = moveX - startX;
+
   if (distance < 0) {
-    slideWidths.value[index] = Math.max(distance, -deleteWidth)
+    slideWidths.value[index] = Math.max(distance, -deleteWidth);
   } else if (distance > 0 && slideWidths.value[index] < 0) {
-    slideWidths.value[index] = Math.min(0, slideWidths.value[index] + distance)
-    startX = moveX
+    slideWidths.value[index] = Math.min(0, slideWidths.value[index] + distance);
+    startX = moveX;
   }
-}
+};
 
 const touchEnd = (index: number) => {
   if (slideWidths.value[index] < -deleteWidth / 2) {
-    slideWidths.value[index] = -deleteWidth
+    slideWidths.value[index] = -deleteWidth;
   } else {
-    slideWidths.value[index] = 0
+    slideWidths.value[index] = 0;
   }
-}
+};
 
 const updateFeeAmount = (index: number, value: string) => {
-  if (!state.roomInfo.basicFees) return
-  
-  if (value === '' || value === '0') {
-    state.roomInfo.basicFees[index].amount = 0
-    return
+  if (!state.roomInfo.basicFees) return;
+
+  if (value === "" || value === "0") {
+    state.roomInfo.basicFees[index].amount = 0;
+    return;
   }
-  if (value.length > 1 && value[0] === '0' && value[1] !== '.') {
-    value = value.replace(/^0+/, '')
+  if (value.length > 1 && value[0] === "0" && value[1] !== ".") {
+    value = value.replace(/^0+/, "");
   }
-  state.roomInfo.basicFees[index].amount = Number(value)
-}
+  state.roomInfo.basicFees[index].amount = Number(value);
+};
 
 const updateRent = (value: string) => {
-  if (value === '' || value === '0') {
-    state.roomInfo.rent = 0
-    return
+  if (value === "" || value === "0") {
+    state.roomInfo.rent = 0;
+    return;
   }
-  if (value.length > 1 && value[0] === '0' && value[1] !== '.') {
-    value = value.replace(/^0+/, '')
+  if (value.length > 1 && value[0] === "0" && value[1] !== ".") {
+    value = value.replace(/^0+/, "");
   }
-  state.roomInfo.rent = Number(value)
-}
+  state.roomInfo.rent = Number(value);
+};
 
 const goToRentRecords = () => {
   uni.navigateTo({
-    url: '/pages/rent-records/rent-records'
-  })
-}
+    url: "/pages/rent-records/rent-records",
+  });
+};
+
+// 添加加载状态处理
+const saveData = async () => {
+  loading.value = true;
+  try {
+    await state.saveData();
+    uni.showToast({ title: "保存成功" });
+  } catch (error) {
+    uni.showToast({
+      title: error.message || "保存失败",
+      icon: "none",
+    });
+  } finally {
+    loading.value = false;
+  }
+};
 </script>
 
 <style scoped>
@@ -710,5 +849,18 @@ const goToRentRecords = () => {
   font-size: 20px;
   font-weight: 300;
   line-height: 20px;
+}
+
+.loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
 }
 </style>

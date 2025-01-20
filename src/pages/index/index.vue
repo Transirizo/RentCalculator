@@ -1,40 +1,48 @@
 <template>
-  <view class="container">
+  <view class="container" @click="handlePageClick">
     <view class="room-list">
-      <view 
-        class="room-item" 
+      <view class="hint-text" v-if="state.roomArray.length">
+        · 长按房间可删除
+      </view>
+      <view
+        class="room-item"
         v-for="(room, index) in state.roomArray"
         :key="room.roomId"
+        @longpress="() => handleLongPress(index)"
       >
-        <view class="room-content">
-          <input
-            class="room-name"
-            :value="room.roomName"
-            placeholder="输入房间名称"
-            placeholder-style="color: #86868b"
-            @input="(e) => changeRoomName(room.roomId, e)"
-          />
+        <view
+          class="room-content"
+          :class="{ 'shake-animation': editingIndex === index }"
+        >
+          <view
+            v-if="editingIndex === index"
+            class="delete-icon"
+            @tap.stop="deleteRoom(room.roomId, index)"
+          >
+            <text class="delete-x">×</text>
+          </view>
+          <text class="room-name">{{ room.roomName || "未命名房间" }}</text>
           <view class="room-actions">
-            <button 
-              class="action-btn calculate" 
+            <button
+              class="action-btn calculate"
               hover-class="btn-hover"
               @click="calculateRoom(room.roomId)"
             >
               计算费用
             </button>
-            <button 
-              class="action-btn rent-record" 
+            <button
+              class="action-btn rent-record"
               hover-class="btn-hover"
               @click="goToRentRecords(room.roomId)"
             >
               房租记录
             </button>
-            <button 
-              class="action-btn delete" 
+            <button
+              class="action-btn settings"
               hover-class="btn-hover"
-              @click="deleteRoom(room.roomId)"
+              @click="goToRoomSettings(room.roomId)"
             >
-              删除
+              房间设置
             </button>
           </view>
         </view>
@@ -53,49 +61,69 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { calculatorState } from '@/store/store'
+import { onMounted, ref } from "vue";
+import { calculatorState } from "@/store/store";
 
-const state = calculatorState()
+const state = calculatorState();
+
+const editingIndex = ref<number | null>(null);
+
+const handleLongPress = (index: number) => {
+  editingIndex.value = index;
+};
+
+const handlePageClick = () => {
+  if (editingIndex.value !== null) {
+    editingIndex.value = null;
+  }
+};
 
 const calculateRoom = (roomId: string) => {
-  state.selectRoom(roomId)
+  state.selectRoom(roomId);
   uni.navigateTo({
     url: `/pages/calculator/calculator?roomId=${roomId}`,
-  })
-}
+  });
+};
 
 onMounted(() => {
-  state.getRooms()
-})
+  state.getRooms();
+});
 
 const addRoom = () => {
-  state.addRoom()
-}
+  state.addRoom();
+};
 
-const changeRoomName = (roomId: string, event: Event) => {
-  state.changeRoomName(roomId, event)
-}
-
-const deleteRoom = (roomId: string) => {
+const deleteRoom = (roomId: string, index: number) => {
   uni.showModal({
-    title: '别删错了！',
-    content: '确认房间正确，无法恢复！',
+    title: "别删错了！",
+    content: "确认房间正确，无法恢复！",
     success: function (res) {
       if (res.confirm) {
-        state.deleteRoom(roomId)
+        state.deleteRoom(roomId);
+        editingIndex.value = null;
       } else if (res.cancel) {
+        editingIndex.value = null;
       }
     },
-  })
-}
+    complete: function () {
+      editingIndex.value = null;
+    },
+  });
+};
 
 const goToRentRecords = (roomId: string) => {
-  state.selectRoom(roomId)
+  state.selectRoom(roomId);
   uni.navigateTo({
-    url: '/pages/rent-records/rent-records'
-  })
-}
+    url: "/pages/rent-records/rent-records",
+  });
+};
+
+const goToRoomSettings = (roomId: string) => {
+  state.selectRoom(roomId);
+  uni.navigateTo({
+    url: "/pages/room-setup/room-setup",
+  });
+};
 </script>
 
 <style scoped>
@@ -111,17 +139,23 @@ const goToRentRecords = (roomId: string) => {
 
 .room-item {
   margin-bottom: 16px;
-  border-radius: 16px;
-  background: var(--card-bg);
+}
+
+.room-wrapper {
+  position: relative;
   overflow: hidden;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  border-radius: 16px;
 }
 
 .room-content {
   padding: 20px;
+  position: relative;
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  border-radius: 16px;
 }
 
 .room-name {
@@ -131,12 +165,16 @@ const goToRentRecords = (roomId: string) => {
   margin-bottom: 16px;
   padding: 8px 0;
   border-bottom: 1px solid rgba(210, 210, 215, 0.5);
-  background: transparent;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .room-actions {
   display: flex;
   gap: 12px;
+  margin-top: 16px;
 }
 
 .action-btn {
@@ -147,12 +185,14 @@ const goToRentRecords = (roomId: string) => {
   font-weight: 500;
   text-align: center;
   transition: opacity 0.3s ease;
+  height: 44px;
+  line-height: 44px;
+  padding: 0;
 }
 
 .calculate {
   background: var(--primary-color);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.2);
 }
 
 .rent-record {
@@ -161,10 +201,10 @@ const goToRentRecords = (roomId: string) => {
   border: 1px solid var(--primary-color);
 }
 
-.delete {
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid var(--danger-color);
-  color: var(--danger-color);
+.settings {
+  background: rgba(0, 122, 255, 0.1);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
 }
 
 .add-btn {
@@ -211,30 +251,61 @@ const goToRentRecords = (roomId: string) => {
   color: var(--secondary-text);
 }
 
-.action-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.action-btn {
-  font-size: 14px;
-  padding: 4px 12px;
-  border-radius: 100px;
-}
-
-.record-btn {
-  color: var(--primary-color);
-  background: rgba(0, 122, 255, 0.1);
-}
-
-.calculate-btn {
+.delete-icon {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 24px;
+  height: 24px;
+  background: var(--danger-color);
   color: #fff;
-  background: var(--primary-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
 }
 
-.action-buttons,
-.action-btn.record-btn,
-.action-btn.calculate-btn {
-  display: none;
+.delete-x {
+  font-size: 18px;
+  font-weight: 300;
+  line-height: 18px;
+  transform: scale(1.2);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+.shake-animation {
+  animation: shake 0.3s infinite;
+}
+
+.room-content {
+  padding: 20px;
+  position: relative;
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  border-radius: 16px;
+}
+
+.hint-text {
+  font-size: 14px;
+  color: var(--secondary-text);
+  margin-bottom: 12px;
+  padding: 0 4px;
 }
 </style>
