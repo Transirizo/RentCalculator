@@ -216,20 +216,19 @@ onMounted(() => {
 });
 
 const calculateWater = () => {
-  const usage = Number(state.currentWater || 0) - Number(state.lastWater || 0);
+  const usage = Math.max(0, Number(state.currentWater || 0) - Number(state.lastWater || 0));
   const price = Number(state.waterPrice || 0);
   return (usage * price).toFixed(2);
 };
 
 const calculateElectricity = () => {
-  const usage =
-    Number(state.currentElectricity || 0) - Number(state.lastElectricity || 0);
+  const usage = Math.max(0, Number(state.currentElectricity || 0) - Number(state.lastElectricity || 0));
   const price = Number(state.electricityPrice || 0);
   return (usage * price).toFixed(2);
 };
 
 const calculateGas = () => {
-  const usage = Number(state.currentGas || 0) - Number(state.lastGas || 0);
+  const usage = Math.max(0, Number(state.currentGas || 0) - Number(state.lastGas || 0));
   const price = Number(state.gasPrice || 0);
   return (usage * price).toFixed(2);
 };
@@ -250,19 +249,15 @@ const calculateTotal = () => {
 };
 
 const getWaterUsage = () => {
-  return (
-    Number(state.currentWater || 0) - Number(state.lastWater || 0)
-  ).toFixed(1);
+  return Math.max(0, Number(state.currentWater || 0) - Number(state.lastWater || 0)).toFixed(1);
 };
 
 const getElectricityUsage = () => {
-  return (
-    Number(state.currentElectricity || 0) - Number(state.lastElectricity || 0)
-  ).toFixed(1);
+  return Math.max(0, Number(state.currentElectricity || 0) - Number(state.lastElectricity || 0)).toFixed(1);
 };
 
 const getGasUsage = () => {
-  return (Number(state.currentGas || 0) - Number(state.lastGas || 0)).toFixed(1);
+  return Math.max(0, Number(state.currentGas || 0) - Number(state.lastGas || 0)).toFixed(1);
 };
 
 const updateWaterPrice = (value: string) => {
