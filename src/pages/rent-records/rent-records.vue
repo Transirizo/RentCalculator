@@ -1,10 +1,5 @@
 <template>
   <view class="container">
-    <!-- 添加自定义返回按钮 -->
-    <button class="back-btn" hover-class="btn-hover" @click="goBack">
-      <text class="back-icon">←</text>
-      <text class="back-text">返回首页</text>
-    </button>
     <view class="content">
       <!-- 房间标题 -->
       <view class="room-header">
@@ -101,7 +96,6 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { onLoad } from "@dcloudio/uni-app";
 import { calculatorState } from "@/store/store";
 
 const state = calculatorState();
@@ -111,12 +105,12 @@ const slideWidths = ref<{ [key: number]: number }>({});
 let startX = 0;
 const deleteWidth = 80;
 
-const handleTouchStart = (event: TouchEvent, index: number) => {
+const handleTouchStart = (event: any, index: number) => {
   startX = event.touches[0].clientX;
   slideWidths.value[index] = slideWidths.value[index] || 0;
 };
 
-const handleTouchMove = (event: TouchEvent, index: number) => {
+const handleTouchMove = (event: any, index: number) => {
   const moveX = event.touches[0].clientX;
   const distance = moveX - startX;
 
@@ -182,29 +176,6 @@ const getBasicFeesTotal = (
 ) => {
   return basicFees?.reduce((sum, fee) => sum + Number(fee.amount || 0), 0) || 0;
 };
-
-// 添加返回首页逻辑
-const goBack = () => {
-  uni.reLaunch({
-    url: "/pages/index/index",
-  });
-};
-
-// 监听返回按钮点击
-onLoad(() => {
-  uni.setNavigationBarColor({
-    frontColor: "#000000",
-    backgroundColor: "#F6F7FB",
-  });
-
-  // 监听物理返回按钮
-  uni.addInterceptor("navigateBack", {
-    invoke() {
-      goBack();
-      return false; // 阻止默认返回行为
-    },
-  });
-});
 </script>
 
 <style scoped>
@@ -361,31 +332,6 @@ onLoad(() => {
   color: var(--text-color);
   font-weight: 500;
   margin-top: 4px;
-}
-
-.back-btn {
-  position: fixed;
-  left: 16px;
-  top: 16px;
-  height: 32px;
-  padding: 0 12px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  z-index: 100;
-}
-
-.back-icon {
-  font-size: 20px;
-  color: var(--text-color);
-}
-
-.back-text {
-  font-size: 14px;
-  color: var(--text-color);
 }
 
 .delete-btn {

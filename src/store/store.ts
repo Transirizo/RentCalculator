@@ -346,10 +346,11 @@ export const calculatorState = defineStore("calculator", {
       this.roomInfo.record.unshift(record);
 
       // 更新 lastReadings 时也要区分
-      const lastReadings = {
-        water: Number(this.currentWater),
-        electricity: Number(this.currentElectricity),
-      };
+      const lastReadings: { water: number; electricity: number; gas?: number } =
+        {
+          water: Number(this.currentWater),
+          electricity: Number(this.currentElectricity),
+        };
 
       if (this.roomInfo.enableGas) {
         lastReadings.gas = Number(this.currentGas);

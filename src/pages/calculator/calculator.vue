@@ -98,13 +98,7 @@
         <text class="card-title">水费计算</text>
         <view class="input-group">
           <text class="label">水费单价</text>
-          <input
-            class="input"
-            type="digit"
-            :value="state.waterPrice || ''"
-            @input="(e) => updateWaterPrice(e.detail.value)"
-            :placeholder="getLastWaterPrice()"
-          />
+          <text class="price">¥{{ state.waterPrice || 0 }}</text>
         </view>
         <view class="input-group">
           <text class="label">本月读数</text>
@@ -118,7 +112,7 @@
         </view>
         <view class="input-group">
           <text class="label">上月读数</text>
-          <text class="last-reading">{{ state.lastWater }}</text>
+          <text class="last-reading highlight">{{ state.lastWater }}</text>
         </view>
         <view class="result-row">
           <text class="label">用水量</text>
@@ -135,13 +129,7 @@
         <text class="card-title">电费计算</text>
         <view class="input-group">
           <text class="label">电费单价</text>
-          <input
-            class="input"
-            type="digit"
-            :value="state.electricityPrice || ''"
-            @input="(e) => updateElectricityPrice(e.detail.value)"
-            :placeholder="getLastElectricityPrice()"
-          />
+          <text class="price">¥{{ state.electricityPrice || 0 }}</text>
         </view>
         <view class="input-group">
           <text class="label">本月读数</text>
@@ -155,7 +143,7 @@
         </view>
         <view class="input-group">
           <text class="label">上月读数</text>
-          <text class="last-reading">{{ state.lastElectricity }}</text>
+          <text class="last-reading highlight">{{ state.lastElectricity }}</text>
         </view>
         <view class="result-row">
           <text class="label">用电量</text>
@@ -172,13 +160,7 @@
         <text class="card-title">燃气费计算</text>
         <view class="input-group">
           <text class="label">燃气费单价</text>
-          <input
-            class="input"
-            type="digit"
-            :value="state.gasPrice || ''"
-            @input="(e) => updateGasPrice(e.detail.value)"
-            :placeholder="getLastGasPrice()"
-          />
+          <text class="price">¥{{ state.gasPrice || 0 }}</text>
         </view>
         <view class="input-group">
           <text class="label">本月读数</text>
@@ -192,7 +174,7 @@
         </view>
         <view class="input-group">
           <text class="label">上月读数</text>
-          <text class="last-reading">{{ state.lastGas }}</text>
+          <text class="last-reading highlight">{{ state.lastGas }}</text>
         </view>
         <view class="result-row">
           <text class="label">用气量</text>
@@ -669,8 +651,14 @@ const saveData = async () => {
 
 .last-reading {
   font-size: 17px;
-  color: var(--secondary-text);
   padding: 8px 12px;
+}
+
+.last-reading.highlight {
+  color: var(--text-color);
+  font-weight: 500;
+  background: rgba(0, 122, 255, 0.1);
+  border-radius: 8px;
 }
 
 .sub-amount {
@@ -862,5 +850,11 @@ const saveData = async () => {
   justify-content: center;
   align-items: center;
   z-index: 999;
+}
+
+.price {
+  font-size: 17px;
+  color: var(--text-color);
+  font-weight: 500;
 }
 </style>
