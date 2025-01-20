@@ -152,7 +152,7 @@ export const calculatorState = defineStore("calculator", {
         // 设置单价
         this.waterPrice = room.waterPrice || 0;
         this.electricityPrice = room.electricityPrice || 0;
-        // 保持燃气费单价，即使未启用也不重置，使用 || 0 确保有初始值
+        // 设置燃气费单价
         this.gasPrice = room.gasPrice || 0;
 
         // 设置上月读数（优先使用最近一次的记录，如果没有则使用初始读数）
@@ -160,18 +160,21 @@ export const calculatorState = defineStore("calculator", {
           // 使用最近一次记录的读数
           this.lastWater = room.record[0].waterReading;
           this.lastElectricity = room.record[0].electricityReading;
-          // 保持燃气表读数，即使未启用也不重置，使用 || 0 确保有初始值
+          // 设置燃气表读数
           this.lastGas = room.record[0].gasReading || 0;
+          // 同时设置当前燃气表读数
+          this.currentGas = String(this.lastGas);
         } else {
           // 使用初始设置的读数
           this.lastWater = room.lastReadings.water;
           this.lastElectricity = room.lastReadings.electricity;
-          // 保持初始燃气表读数，即使未启用也不重置，使用 || 0 确保有初始值
+          // 设置初始燃气表读数
           this.lastGas = room.lastReadings.gas || 0;
+          // 同时设置当前燃气表读数
+          this.currentGas = String(this.lastGas);
         }
 
-        // 确保 lastReadings 中包含燃气表读数
-        // 总是保存燃气表读数，即使未启用也不重置
+        // 总是保存燃气表读数
         if (this.lastGas !== undefined) {
           this.roomInfo.lastReadings = {
             ...this.roomInfo.lastReadings,
@@ -405,9 +408,10 @@ export const calculatorState = defineStore("calculator", {
       this.lastWater = Number(this.currentWater);
       this.lastElectricity = Number(this.currentElectricity);
       this.lastGas = Number(this.currentGas);
-      this.currentWater = this.lastWater;
-      this.currentElectricity = this.lastElectricity;
-      this.currentGas = this.lastGas;
+      // 清空当前读数
+      this.currentWater = "";
+      this.currentElectricity = "";
+      this.currentGas = "";
     },
 
     saveRentRecords() {

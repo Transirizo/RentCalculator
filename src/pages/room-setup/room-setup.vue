@@ -226,6 +226,11 @@ const saveAndReturn = () => {
 
     state.roomArray[index] = state.roomInfo;
   }
+  
+  // 确保数据已更新到 roomArray
+  state.roomArray = [...state.roomArray];
+  
+  // 保存到本地存储
   uni.setStorageSync("rooms", JSON.stringify(state.roomArray));
 
   // 返回首页
