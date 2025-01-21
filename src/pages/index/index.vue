@@ -88,9 +88,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, defineExpose } from "vue";
 import { calculatorState } from "@/store/store";
-
+import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 const state = calculatorState();
 const searchText = ref("");
 
@@ -115,6 +115,24 @@ const calculateRoom = (roomId: string) => {
 
 onMounted(() => {
   state.getRooms();
+});
+
+// 分享给朋友
+onShareAppMessage(() => {
+  return {
+    title: '房租计算器',
+    path: '/pages/index/index',
+    imageUrl: '/static/share.jpg'
+  }
+});
+
+// 分享到朋友圈
+onShareTimeline(() => {
+  return {
+    title: '房租计算器',
+    query: '',
+    imageUrl: '/static/share.jpg'
+  }
 });
 
 const addRoom = () => {
@@ -461,4 +479,5 @@ const clearSearch = () => {
   background: #f0f0f0;
   border-radius: 50%;
 }
+
 </style>
